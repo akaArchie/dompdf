@@ -72,6 +72,33 @@ class Text extends AbstractRenderer
           $text
         );*/
 
+        /********************
+         * Patching in fix for displaying arabic text
+         * Adapted from: https://stackoverflow.com/questions/21201257/arabic-fonts-display-in-reverse-order-in-dompdf
+         **/
+        // check if the line contains Hebrew characters from the start too
+        // to avoid flipping dates etc.
+        if (strtolower($style->direction) === 'rtl' && preg_match("/\p{Arabic}/u", $text)) {
+            preg_match_all('/./us', $text, $ar);
+
+            // reverse the whole line
+            $text = join('', array_reverse($ar[0]));
+
+            // flip english back to ltr
+            $words = explode(' ', $text);
+            foreach ($words as $i => $word) {
+                if (!preg_match("/\p{Arabic}/u", $word)) {
+                    $words[$i] = implode('', array_reverse(str_split($word)));
+                }
+            }
+
+            $text = implode(' ', $words);
+        }
+        /**
+         * End Patch
+         *******************/
+
+
         $this->_canvas->text($x, $y, $text,
             $font, $size,
             $style->color, $word_spacing, $letter_spacing);
